@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+    </head>
+
+    <body>
+        <script>
+var grid_length = 75;
+// Note that grid_length in the book is 100.
+// I reduced it here for smooth performance on mobile devices.
+var grid = [];
+var temp_grid = [];
+var beta = 0.05;
+var gamma = 0.15;
+
+function get_random_int(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function init_grid() {
+    for (var i = 0; i < grid_length; i = i + 1) {
+        grid[i] = [];
+        for (var ii = 0; ii < grid_length; ii = ii + 1) {
+           grid[i][ii] = "S";
+        }
+    }
+    grid[get_random_int(0,grid_length-1)][get_random_int(0,grid_length-1)] = "I";
+}
+
+init_grid();
+
+draw_grid(grid,["S","#dcdcdc","I","#c82605","R","#6fc041"]);
+
+function simulate_and_visualize() {
+    run_time_step();
+    update_grid(grid,["S","#dcdcdc","I","#c82605","R","#6fc041"]);
+}
+
+setInterval(simulate_and_visualize, 50);
+
+function run_time_step() {
+    for (var i = 0; i < grid_length; i = i + 1) {
+        temp_grid[i] = [];
+        for (var ii = 0; ii < grid_length; ii = ii + 1) {
+            temp_grid[i][ii] = grid[i][ii];
+        }
+    }
+    for (i = 0; i < grid_length; i = i + 1) {
+        for (ii = 0; ii < grid_length; ii = ii + 1) {
+            if (grid[i][ii] == "I") {
+                expose_neighbors(i,ii);
+                try_recovery(i,ii);
+            }
+        }
+    }
+    for (i = 0; i < grid_length; i = i + 1) {
+        for (ii = 0; ii < grid_length; ii = ii + 1) {
+            grid[i][ii] = temp_grid[i][ii];
+        }
+    }
+}
+
+function expose_neighbors(i,ii) {
+    for (var n_i = i-1; n_i <= i+1; n_i = n_i + 1) {
+        for (var n_ii = ii-1; n_ii <= ii+1; n_ii = n_ii + 1) {
+            if (n_i == i && n_ii == ii) {
+                continue;
+            }
+            if (Math.random() < 0.01) { 
+                var random_i = get_bounded_index(get_random_int(0,grid_length-1)); 
+                var random_ii = get_bounded_index(get_random_int(0,grid_length-1));
+                try_infection(random_i, random_ii);
+            }
+            else {
+                try_infection(get_bounded_index(n_i),get_bounded_index(n_ii));
+            }
+        }
+    }
+}
+
+function get_bounded_index(index) {
+    var bounded_index = index;
+    if (index < 0) {
+        bounded_index = index + grid_length;
+    }
+    if (index >= grid_length) {
+        bounded_index = index - grid_length;
+    }
+    return bounded_index;
+}
+
+function try_infection(i,ii) {
+    if (grid[i][ii] == "S") {
+        if (Math.random() < beta) {
+            temp_grid[i][ii] = "I";
+        }
+    }
+}
+
+function try_recovery(i,ii) {
+    if (grid[i][ii] == "I") {
+        if (Math.random() < gamma) {
+           temp_grid[i][ii] = "R";
+        }
+    }
+}
+        </script>
+    </body> 
+
+</html>
